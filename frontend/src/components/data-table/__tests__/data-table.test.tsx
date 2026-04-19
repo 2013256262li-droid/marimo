@@ -250,4 +250,142 @@ describe("DataTable", () => {
     expect(within(updatedRows[2]).getByText("pending")).toBeTruthy();
     expect(within(updatedRows[3]).getByText("pending")).toBeTruthy();
   });
+
+  describe("empty state messages", () => {
+    it("shows 'No data available' when there is no data and no search/filters", () => {
+      const columns: ColumnDef<TestData>[] = [
+        { accessorKey: "name", header: "Name" },
+      ];
+
+      render(
+        <TooltipProvider>
+          <DataTable
+            data={[]}
+            columns={columns}
+            selection={null}
+            totalRows={0}
+            totalColumns={1}
+            pagination={false}
+          />
+        </TooltipProvider>,
+      );
+
+      expect(screen.getByText("No data available.")).toBeInTheDocument();
+    });
+
+    it("shows 'No results match your search.' when there is a search query but no results", () => {
+      const columns: ColumnDef<TestData>[] = [
+        { accessorKey: "name", header: "Name" },
+      ];
+
+      render(
+        <TooltipProvider>
+          <DataTable
+            data={[]}
+            columns={columns}
+            selection={null}
+            totalRows={0}
+            totalColumns={1}
+            pagination={false}
+            enableSearch={true}
+            searchQuery="nonexistent"
+          />
+        </TooltipProvider>,
+      );
+
+      expect(
+        screen.getByText("No results match your search."),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("selection stability with stable row IDs", () => {
+    interface RowDataWithStableId {
+      _marimo_row_id: number;
+      name: string;
+    }
+
+    it("maintains row selection state when using stable row IDs", () => {
+      const mockOnRowSelectionChange = vi.fn();
+      const testData: RowDataWithStableId[] = [
+        { _marimo_row_id: 100, name: "Item A" },
+        { _marimo_row_id: 101, name: "Item B" },
+        { _marimo_row_id: 102, name: "Item C" },
+      ];
+
+      const columns: ColumnDef<RowDataWithStableId>[] = [
+        { accessorKey: "name", header: "Name" },
+      ];
+
+      const initialRowSelection: RowSelectionState = { "100": true };
+
+      render(
+        <TooltipProvider>
+          <DataTable
+            data={testData}
+            columns={columns}
+            selection="single"
+            totalRows={3}
+            totalColumns={1}
+            pagination={false}
+            rowSelection={initialRowSelection}
+            onRowSelectionChange={mockOnRowSelectionChange}
+          />
+        </TooltipProvider>,
+      );
+
+      expect(mockOnRowSelectionChange).not.toHaveBeenCalledWith({});
+    });
+
+    it("uses _marimo_row_id as stable row identifier", () => {
+      const mockOnRowSelectionChange = vi.fn();
+      const testData: RowDataWithStableId[] = [
+        { _marimo_row_id: 100, name: "Item A" },
+        { _marimo_row_id: 101, name: "Item B" },
+      ];
+
+      const columns: ColumnDef<RowDataWithStableId>[] = [
+        { accessorKey: "name", header: "Name" },
+      ];
+
+      const initialRowSelection: RowSelectionState = { "100": true };
+
+      const { rerender } = render(
+        <TooltipProvider>
+          <DataTable
+            data={testData}
+            columns={columns}
+            selection="single"
+            totalRows={2}
+            totalColumns={1}
+            pagination={false}
+            rowSelection={initialRowSelection}
+            onRowSelectionChange={mockOnRowSelectionChange}
+          />
+        </TooltipProvider>,
+      );
+
+      const filteredData: RowDataWithStableId[] = [
+        { _marimo_row_id: 100, name: "Item A" },
+      ];
+
+      rerender(
+        <TooltipProvider>
+          <DataTable
+            data={filteredData}
+            columns={columns}
+            selection="single"
+            totalRows={1}
+            totalColumns={1}
+            pagination={false}
+            rowSelection={initialRowSelection}
+            onRowSelectionChange={mockOnRowSelectionChange}
+          />
+        </TooltipProvider>,
+      );
+
+      expect(mockOnRowSelectionChange).not.toHaveBeenCalledWith({});
+      expect(initialRowSelection).toHaveProperty("100", true);
+    });
+  });
 });

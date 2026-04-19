@@ -319,6 +319,8 @@ const DataTableInternal = <TData,>({
               getRowIndex={getPaginatedRowIndex}
               viewedRowIdx={viewedRowIdx}
               virtualize={virtualize}
+              hasSearchQuery={!!searchQuery}
+              hasFilters={!!filters && filters.length > 0}
             />
           </Table>
           <TableBottomBar

@@ -88,6 +88,8 @@ interface DataTableBodyProps<TData> {
   getRowIndex?: (row: TData, idx: number) => number;
   viewedRowIdx?: number;
   virtualize?: boolean;
+  hasSearchQuery?: boolean;
+  hasFilters?: boolean;
 }
 
 export const DataTableBody = <TData,>({
@@ -97,6 +99,8 @@ export const DataTableBody = <TData,>({
   getRowIndex,
   viewedRowIdx,
   virtualize = false,
+  hasSearchQuery = false,
+  hasFilters = false,
 }: DataTableBodyProps<TData>) => {
   const rows = table.getRowModel().rows;
 
@@ -247,12 +251,28 @@ export const DataTableBody = <TData,>({
   const hasFillerColumn = columns.length <= AUTO_WIDTH_MAX_COLUMNS;
   const totalColSpan = columns.length + (hasFillerColumn ? 1 : 0);
 
+  const getEmptyStateMessage = () => {
+    if (hasSearchQuery && hasFilters) {
+      return "No results match your search and filters.";
+    }
+    if (hasSearchQuery) {
+      return "No results match your search.";
+    }
+    if (hasFilters) {
+      return "No results match your filters.";
+    }
+    return "No data available.";
+  };
+
   const renderRows = () => {
     if (rows.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={totalColSpan} className="h-24 text-center">
-            No results.
+          <TableCell
+            colSpan={totalColSpan}
+            className="h-24 text-center text-muted-foreground"
+          >
+            {getEmptyStateMessage()}
           </TableCell>
         </TableRow>
       );

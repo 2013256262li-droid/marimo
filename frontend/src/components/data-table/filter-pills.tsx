@@ -6,10 +6,11 @@ import type {
   ColumnFiltersState,
   Table,
 } from "@tanstack/react-table";
-import { XIcon } from "lucide-react";
+import { Trash2Icon, XIcon } from "lucide-react";
 import { type DateFormatter, useDateFormatter } from "react-aria";
 import { logNever } from "@/utils/assertNever";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import type { ColumnFilterValue } from "./filters";
 import { stringifyUnknownValue } from "./utils";
 
@@ -56,8 +57,20 @@ export const FilterPills = <TData,>({ filters, table }: Props<TData>) => {
   }
 
   return (
-    <div className="flex flex-wrap gap-2 px-1">
+    <div className="flex flex-wrap items-center gap-2 px-1">
       {filters.map(renderFilterPill)}
+      {filters.length > 0 && (
+        <Button
+          variant="text"
+          size="xs"
+          className="h-5 text-xs text-muted-foreground hover:text-foreground gap-1"
+          onClick={() => table.setColumnFilters([])}
+          title="Clear all filters"
+        >
+          <Trash2Icon className="w-3 h-3" />
+          Clear all
+        </Button>
+      )}
     </div>
   );
 };
