@@ -282,7 +282,13 @@ const DataTableInternal = <TData,>({
 
   return (
     <div className={cn(wrapperClassName, "flex flex-col space-y-1")}>
-      <FilterPills filters={filters} table={table} />
+      <FilterPills
+        filters={filters}
+        table={table}
+        onResetSearch={
+          onSearchQueryChange ? () => onSearchQueryChange("") : undefined
+        }
+      />
       <CellSelectionProvider>
         <div
           part="table-wrapper"
@@ -319,6 +325,8 @@ const DataTableInternal = <TData,>({
               getRowIndex={getPaginatedRowIndex}
               viewedRowIdx={viewedRowIdx}
               virtualize={virtualize}
+              hasSearchQuery={!!searchQuery}
+              hasFilters={!!filters && filters.length > 0}
             />
           </Table>
           <TableBottomBar

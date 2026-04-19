@@ -6,19 +6,25 @@ import type {
   ColumnFiltersState,
   Table,
 } from "@tanstack/react-table";
-import { XIcon } from "lucide-react";
+import { Trash2Icon, XIcon } from "lucide-react";
 import { type DateFormatter, useDateFormatter } from "react-aria";
 import { logNever } from "@/utils/assertNever";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import type { ColumnFilterValue } from "./filters";
 import { stringifyUnknownValue } from "./utils";
 
 interface Props<TData> {
   filters: ColumnFiltersState | undefined;
   table: Table<TData>;
+  onResetSearch?: () => void;
 }
 
-export const FilterPills = <TData,>({ filters, table }: Props<TData>) => {
+export const FilterPills = <TData,>({
+  filters,
+  table,
+  onResetSearch,
+}: Props<TData>) => {
   const timeFormatter = useDateFormatter({
     hour: "2-digit",
     minute: "2-digit",
@@ -55,9 +61,26 @@ export const FilterPills = <TData,>({ filters, table }: Props<TData>) => {
     );
   }
 
+  const handleClearAll = () => {
+    table.setColumnFilters([]);
+    onResetSearch?.();
+  };
+
   return (
-    <div className="flex flex-wrap gap-2 px-1">
+    <div className="flex flex-wrap items-center gap-2 px-1">
       {filters.map(renderFilterPill)}
+      {filters.length > 0 && (
+        <Button
+          variant="text"
+          size="xs"
+          className="h-5 text-xs text-muted-foreground hover:text-foreground gap-1"
+          onClick={handleClearAll}
+          title={onResetSearch ? "Reset all filters and search" : "Clear all filters"}
+        >
+          <Trash2Icon className="w-3 h-3" />
+          {onResetSearch ? "Reset all" : "Clear all"}
+        </Button>
+      )}
     </div>
   );
 };
