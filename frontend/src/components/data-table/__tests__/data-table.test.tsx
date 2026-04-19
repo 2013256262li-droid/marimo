@@ -8,6 +8,7 @@ import type {
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Filter } from "@/components/data-table/filters";
 import { DataTable } from "../data-table";
 
 interface TestData {
@@ -386,6 +387,179 @@ describe("DataTable", () => {
 
       expect(mockOnRowSelectionChange).not.toHaveBeenCalledWith({});
       expect(initialRowSelection).toHaveProperty("100", true);
+    });
+
+    it("preserves selection when multiple rows are selected before filtering", () => {
+      const mockOnRowSelectionChange = vi.fn();
+      const testData: RowDataWithStableId[] = [
+        { _marimo_row_id: 100, name: "Item A" },
+        { _marimo_row_id: 101, name: "Item B" },
+        { _marimo_row_id: 102, name: "Item C" },
+      ];
+
+      const columns: ColumnDef<RowDataWithStableId>[] = [
+        { accessorKey: "name", header: "Name" },
+      ];
+
+      const initialRowSelection: RowSelectionState = {
+        "100": true,
+        "102": true,
+      };
+
+      const { rerender } = render(
+        <TooltipProvider>
+          <DataTable
+            data={testData}
+            columns={columns}
+            selection="multi"
+            totalRows={3}
+            totalColumns={1}
+            pagination={false}
+            rowSelection={initialRowSelection}
+            onRowSelectionChange={mockOnRowSelectionChange}
+          />
+        </TooltipProvider>,
+      );
+
+      const filteredData: RowDataWithStableId[] = [
+        { _marimo_row_id: 100, name: "Item A" },
+        { _marimo_row_id: 101, name: "Item B" },
+      ];
+
+      rerender(
+        <TooltipProvider>
+          <DataTable
+            data={filteredData}
+            columns={columns}
+            selection="multi"
+            totalRows={2}
+            totalColumns={1}
+            pagination={false}
+            rowSelection={initialRowSelection}
+            onRowSelectionChange={mockOnRowSelectionChange}
+          />
+        </TooltipProvider>,
+      );
+
+      expect(mockOnRowSelectionChange).not.toHaveBeenCalledWith({});
+      expect(initialRowSelection).toHaveProperty("100", true);
+      expect(initialRowSelection).toHaveProperty("102", true);
+    });
+  });
+
+  describe("reset all functionality", () => {
+    it("shows 'Reset all' button when both search and filters are available", () => {
+      const mockOnSearchQueryChange = vi.fn();
+      const testData: TestData[] = [
+        { id: 1, name: "Test 1" },
+        { id: 2, name: "Test 2" },
+      ];
+
+      const columns: ColumnDef<TestData>[] = [
+        { accessorKey: "name", header: "Name" },
+      ];
+
+      render(
+        <TooltipProvider>
+          <DataTable
+            data={testData}
+            columns={columns}
+            selection={null}
+            totalRows={2}
+            totalColumns={1}
+            pagination={false}
+            enableSearch={true}
+            searchQuery="test"
+            onSearchQueryChange={mockOnSearchQueryChange}
+            showFilters={true}
+            filters={[{ id: "name", value: Filter.text({ text: "test", operator: "contains" }) }]}
+          />
+        </TooltipProvider>,
+      );
+
+      expect(screen.getByText("Reset all")).toBeInTheDocument();
+    });
+
+    it("shows 'Clear all' button when only filters are available", () => {
+      const testData: TestData[] = [
+        { id: 1, name: "Test 1" },
+        { id: 2, name: "Test 2" },
+      ];
+
+      const columns: ColumnDef<TestData>[] = [
+        { accessorKey: "name", header: "Name" },
+      ];
+
+      render(
+        <TooltipProvider>
+          <DataTable
+            data={testData}
+            columns={columns}
+            selection={null}
+            totalRows={2}
+            totalColumns={1}
+            pagination={false}
+            showFilters={true}
+            filters={[{ id: "name", value: Filter.text({ text: "test", operator: "contains" }) }]}
+          />
+        </TooltipProvider>,
+      );
+
+      expect(screen.getByText("Clear all")).toBeInTheDocument();
+    });
+  });
+
+  describe("selection without stable row IDs", () => {
+    it("uses array index as row ID when _marimo_row_id is not present", () => {
+      const mockOnRowSelectionChange = vi.fn();
+      const testData: TestData[] = [
+        { id: 1, name: "Test 1" },
+        { id: 2, name: "Test 2" },
+      ];
+
+      const columns: ColumnDef<TestData>[] = [
+        { accessorKey: "name", header: "Name" },
+      ];
+
+      const initialRowSelection: RowSelectionState = { "0": true };
+
+      const { rerender } = render(
+        <TooltipProvider>
+          <DataTable
+            data={testData}
+            columns={columns}
+            selection="single"
+            totalRows={2}
+            totalColumns={1}
+            pagination={false}
+            rowSelection={initialRowSelection}
+            onRowSelectionChange={mockOnRowSelectionChange}
+          />
+        </TooltipProvider>,
+      );
+
+      expect(mockOnRowSelectionChange).not.toHaveBeenCalledWith({});
+
+      const filteredData: TestData[] = [
+        { id: 1, name: "Test 1" },
+      ];
+
+      rerender(
+        <TooltipProvider>
+          <DataTable
+            data={filteredData}
+            columns={columns}
+            selection="single"
+            totalRows={1}
+            totalColumns={1}
+            pagination={false}
+            rowSelection={initialRowSelection}
+            onRowSelectionChange={mockOnRowSelectionChange}
+          />
+        </TooltipProvider>,
+      );
+
+      expect(mockOnRowSelectionChange).not.toHaveBeenCalledWith({});
     });
   });
 });
